@@ -311,9 +311,15 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                 this,
                 serviceMetadata
         );
-
+        //获取当前服务的注册中心,可以看到是个list，可以有多个服务中心
         List<URL> registryURLs = ConfigValidationUtils.loadRegistries(this, true);
 
+        int protocolConfigNum = protocols.size();
+        /*
+        遍历多个协议,每个协议当需要向这些注册中心注册
+        可以看到 Dubbo 支持多注册中心，并且支持多个协议，一个服务如果有多个协议那么就都需要暴露，比如同时支持 dubbo 协议和 hessian 协议，
+        那么需要将这个服务用两种协议分别向多个注册中心（如果有多个的话）暴露注册。
+         */
         for (ProtocolConfig protocolConfig : protocols) {
             String pathKey = URL.buildKey(getContextPath(protocolConfig)
                     .map(p -> p + "/" + path)
@@ -499,6 +505,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
                         // 调用Protocol实现，进行发布
                         // 这里的PROTOCOL是Protocol接口的适配器
+                        // PROTOCOL 这里基于url的协议进行适配，这里registryURL 的协议是registry
                         Exporter<?> exporter = PROTOCOL.export(wrapperInvoker);
                         exporters.add(exporter);
                     }

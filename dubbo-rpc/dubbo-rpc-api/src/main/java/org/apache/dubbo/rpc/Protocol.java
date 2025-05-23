@@ -33,6 +33,11 @@ public interface Protocol {
 
     // 将一个Invoker发布出去，export()方法实现需要是幂等的，
     // 即同一个服务暴露多次和暴露一次的效果是相同的
+    /*
+    Protocol的export方法是标注了@Adaptive注解的，因此会生成代理类，然后代理类会根据Invoker里面的  URL参数  得知具体的协议
+    然后通过Dubbo SPI机制选择对应的实现类进行export，而这个方法就会调用对应实现，如InjvmProtocol#export 方法。
+    原文链接：https://blog.csdn.net/weixin_41605937/article/details/115376526
+     */
     @Adaptive
     <T> Exporter<T> export(Invoker<T> invoker) throws RpcException;
 

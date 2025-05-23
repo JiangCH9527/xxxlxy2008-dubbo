@@ -255,7 +255,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
         map.put(REGISTER_IP_KEY, hostToRegistry);
 
         serviceMetadata.getAttachments().putAll(map);
-        // 调用createProxy()方法，创建代理
+        // 调用createProxy()方法，创建代理 (例如拼接注册中心url)
         ref = createProxy(map);
 
         serviceMetadata.setTarget(ref);
@@ -330,6 +330,10 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
                 URL registryURL = null;
                 for (URL url : urls) {
+                    /*
+                      核心 创建Invoker
+                      PROTOCOL 可以参考 RegistryProtocol 和 DubboProtocol
+                     */
                     invokers.add(REF_PROTOCOL.refer(interfaceClass, url));
                     if (UrlUtils.isRegistry(url)) { // 确定是多注册中心，还是直连多个Provider
                         registryURL = url;

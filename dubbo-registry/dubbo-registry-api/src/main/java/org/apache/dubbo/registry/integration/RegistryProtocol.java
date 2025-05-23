@@ -182,6 +182,13 @@ public class RegistryProtocol implements Protocol {
         registry.register(registeredProviderUrl);
     }
 
+    /**
+     * ApplicationModel/ProviderModel/ConsumerModel 是 Dubbo 服务提供者的核心元数据枢纽，它：
+     *
+     * 存储服务的完整定义（接口、实现、方法）
+     * 记录服务与注册中心的关联关系
+     * 为 Invoker 和 Exporter 的创建提供数据支持
+     */
     private void registerStatedUrl(URL registryUrl, URL registeredProviderUrl, boolean registered) {
         ProviderModel model = ApplicationModel.getProviderModel(registeredProviderUrl.getServiceKey());
         model.addStatedUrl(new ProviderModel.RegisterStatedURL(
@@ -190,6 +197,11 @@ public class RegistryProtocol implements Protocol {
                 registered));
     }
 
+    /**
+     * Invoker 是服务调用逻辑的抽象，负责方法调用的具体实现
+     * Exporter 是 Invoker 的网络代理，负责将 Invoker 暴露为可远程访问的服务，并处理网络通信细节
+     *
+     */
     @Override
     public <T> Exporter<T> export(final Invoker<T> originInvoker) throws RpcException {
         // 将"registry://"协议(Remote URL)转换成"zookeeper://"协议(Registry URL)
@@ -207,11 +219,13 @@ public class RegistryProtocol implements Protocol {
 
         providerUrl = overrideUrlWithConfig(providerUrl, overrideSubscribeListener);
         //export invoker
-        // 导出服务，底层会通过会执行DubboProtocol.export()方法，启动对应的Server
+        // 基于providerUrl 导出服务，底层会通过会执行DubboProtocol.export()方法，启动对应的Server
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker, providerUrl);
 
+        // 获取注册中心的URL 比如zookeeper://127.0.0.1:2181/ 根据URL的加载Registry的实现类 比如我们这里用的就是 ZookeeperRegistry
         // 根据RegistryURL获取对应的注册中心Registry对象，其中会依赖之前课时介绍的RegistryFactory
         final Registry registry = getRegistry(originInvoker);
+
         // 获取将要发布到注册中心上的Provider URL，其中会删除一些多余的参数信息
         final URL registeredProviderUrl = getUrlToRegistry(providerUrl, registryUrl);
 
@@ -379,7 +393,8 @@ public class RegistryProtocol implements Protocol {
 
     /**
      * Return the url that is registered to the registry and filter the url parameter once
-     *
+     * 该方法处理服务提供者的 URL，通过移除冗余参数（如本地绑定信息、监控配置 Qos服务质量）或只保留核心参数（如接口名、版本）
+     * 生成最终注册到注册中心的简化 URL，以减少数据量并避免暴露内部配置。
      * @param providerUrl
      * @return url to registry.
      */
